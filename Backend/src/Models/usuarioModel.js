@@ -5,7 +5,7 @@ const conexao = mysql.createPool(db);
 
 export const criandousuario = async (nome, login, senha) => {
     console.log("usuarioModel :: criandousuario")
-    const sql = `INSERT INTO Usuario (nome, login, senha) VALUES (?, ?, ?`;
+    const sql = `INSERT INTO usuario (nome, login, senha) VALUES (?, ?, ?`;
 
     const params = [nome, login, senha];
 
@@ -18,6 +18,8 @@ export const criandousuario = async (nome, login, senha) => {
 };
 
 export const exibirusuario = async () => {
+    console.log("usuarioModel :: exibindousuario");
+    const sql = `SELECT * FROM usuario`;
 
 }
 

@@ -3,23 +3,42 @@ import mysql from 'mysql2/promise';
 
 const conexao = mysql.createPool(db);
 
-export const criandousuario = async (nome, login, senha) => {
-    console.log("usuarioModel :: criandousuario")
-    const sql = `INSERT INTO usuario (nome, login, senha) VALUES (?, ?, ?`;
-
+export const criandoUsuario = async (nome, login, senha) => {
+    console.log("UsuarioModel :: criandoUsuario");
+    const sql = `INSERT INTO usuario (nome, login, senha) VALUES (?,?,?)`;
     const params = [nome, login, senha];
 
     try {
-        const [resposta] = await console.query(sql, params);
-        return[201, {mensagem: 'usuario criado com sucesso!!'}]
+        const [resposta] = await conexao.query(sql, params);
+        return [201, {mensagem: 'Usuario cadastrado com sucesso!!'}];
     } catch (error) {
-        console.error({mensagem: "Error ao criar Usuario", code:error.code, sql:error.sqlMessage});
+        console.error({mensagem: "Erro ao cadastrar usuario", code:error.code, sql:error.sqlMessage});
+        return [500, {mensagem: "Erro ao cadastrar usuario", code:error.code, sql:error.sqlMessage}];
     }
 };
 
-export const exibirusuario = async () => {
-    console.log("usuarioModel :: exibindousuario");
-    const sql = `SELECT * FROM usuario`;
 
-}
+export const visualizarUsuario = async () => {
+    console.log("UsuarioModel :: visualizarUsuario");
+    const sql = `SELECT * FROM usuario`
+    
+    try {
+        const [resposta] = await conexao.query(sql)
+        return [201, resposta]
+    } catch (error) {
+        console.error({mensagem: "erro ao mostrar os Usuarios", code:error.code, sql:error.sqlMessage});
+        return [500, {mensagem: "erro ao mostrar os Usuarios", code:error.code, sql:error.sqlMessage}]
+    }
+};
 
+export const atualizarUsuario = async (nome, login, senha, id_usuario) => {
+    console.log("UsuarioModel :: atualizarUsuario");
+    const sql = `UPDATE usuario SET nome=?, login=?, senha=? WHERE id_usuario=?`
+    const params = [nome, login, senha, id_usuario]
+    
+    try {
+        const [resposta] = await conexao.query(sql, params);
+    } catch (error) {
+        
+    }
+};

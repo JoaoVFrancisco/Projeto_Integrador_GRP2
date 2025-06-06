@@ -33,12 +33,40 @@ export const visualizarUsuario = async () => {
 
 export const atualizarUsuario = async (nome, login, senha, id_usuario) => {
     console.log("UsuarioModel :: atualizarUsuario");
-    const sql = `UPDATE usuario SET nome=?, login=?, senha=? WHERE id_usuario=?`
+
+    const sql = `UPDATE usuario SET nome=?, login=?, senha=? WHERE id_usuario=?`;
+
     const params = [nome, login, senha, id_usuario]
     
     try {
         const [resposta] = await conexao.query(sql, params);
+
+        if(resposta.affectedRows<1){
+            return [404, {mensagem:"Usuario não encontrado!!"}]
+        }
+
+        return [201, {mensagem:"Usuario atualizado com sucesso!!"}];
     } catch (error) {
-        
+        console.error({mensagem:"erro ao atualizar Usuario", code:error.code, sql:error.sqlMessage});
+        return [500, {mensagem: "erro ao atualizar Usuario", code:error.code, sql:error.sqlMessage}];
     }
 };
+
+export const apagarUsuario = async (id_usuario) => {
+    console.log("UsuarioModel :: deletarUsuario");
+    const sql = `DELETE FROM usuario WHERE id_usuario=?`
+    const params = [id_usuario]
+
+    try {
+        const [resposta] = await conexao.query(sql, params);
+
+        if(resposta.affectedRows<1){
+            return [404, {mensagem:"Usuario não encontrado!!"}]
+        }
+
+        return [200, {mensagem: "Usuario deletado!!!"}]
+    } catch (error) {
+        console.error({mensagem: "Usuario não encontrado", code:error.code, sql:error.sqlMessage})
+        return [500, {mensagem:  "Usuario não encontrado", code:error.code, sql:error.sqlMessage}]
+    }
+}

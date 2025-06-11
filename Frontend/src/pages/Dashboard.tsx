@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Factory, Power, AlertTriangle, Gauge, Package, FileText, Database, RefreshCcw } from 'lucide-react';
+import { Factory, Power, AlertTriangle, Gauge, Package, FileText, Database, RefreshCcw, Users, LogOut } from 'lucide-react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const styles = StyleSheet.create({
   page: { padding: 30, fontFamily: 'Helvetica' },
@@ -121,12 +123,22 @@ initialStats.operationalEfficiency = Number((
 ).toFixed(1));
 
 export default function Dashboard() {
+  const { user, logout, isAdmin } = useAuth();
   const [timeframe, setTimeframe] = useState<'daily' | 'monthly' | 'annual'>('daily');
   const [productionData, setProductionData] = useState(initialProductionData);
   const [inventoryData, setInventoryData] = useState(initialInventoryData);
   const [stats, setStats] = useState(initialStats);
   const [showDataForm, setShowDataForm] = useState(false);
-  const [newData, setNewData] = useState({ name: '', value: '', target: '' });
+  const [dataType, setDataType] = useState<'production' | 'energy' | 'failures'>('production');
+  const [newData, setNewData] = useState({ 
+    name: '', 
+    value: '', 
+    target: '',
+    energyConsumption: '',
+    targetEnergyConsumption: '',
+    defectivePieces: '',
+    totalProduction: ''
+  });
 
   const calculateOperationalEfficiency = (
     actualProduction: number,
@@ -204,18 +216,109 @@ export default function Dashboard() {
 
   const handleDataSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const updatedData = [...productionData[timeframe]];
-    updatedData.push({
-      name: newData.name,
-      value: parseInt(newData.value),
-      target: parseInt(newData.target)
+    
+    if (dataType === 'production') {
+      const updatedData = [...productionData[timeframe]];
+      updatedData.push({
+        name: newData.name,
+        value: parseInt(newData.value),
+        target: parseInt(newData.target)
+      });
+      setProductionData({
+        ...productionData,
+        [timeframe]: updatedData
+      });
+    } else if (dataType === 'energy') {
+      const newStats = {
+        ...stats,
+        energyConsumption: parseInt(newData.energyConsumption),
+        targetEnergyConsumption: parseInt(newData.targetEnergyConsumption)
+      };
+      
+      // Recalculate operational efficiency
+      const totalProduction = productionData[timeframe].reduce((sum, item) => sum + item.value, 0);
+      const targetProduction = productionData[timeframe].reduce((sum, item) => sum + item.target, 0);
+      
+      newStats.operationalEfficiency = calculateOperationalEfficiency(
+        totalProduction,
+        targetProduction,
+        newStats.energyConsumption,
+        newStats.targetEnergyConsumption,
+        newStats.defectivePieces,
+        newStats.totalProduction
+      );
+      
+      setStats(newStats);
+    } else if (dataType === 'failures') {
+      const defectivePieces = parseInt(newData.defectivePieces);
+      const totalProduction = parseInt(newData.totalProduction);
+      const reworkRate = ((defectivePieces / totalProduction) * 100).toFixed(1);
+      
+      const newStats = {
+        ...stats,
+        defectivePieces,
+        totalProduction,
+        reworkRate
+      };
+      
+      // Recalculate operational efficiency
+      const actualProduction = productionData[timeframe].reduce((sum, item) => sum + item.value, 0);
+      const targetProduction = productionData[timeframe].reduce((sum, item) => sum + item.target, 0);
+      
+      newStats.operationalEfficiency = calculateOperationalEfficiency(
+        actualProduction,
+        targetProduction,
+        newStats.energyConsumption,
+        newStats.targetEnergyConsumption,
+        newStats.defectivePieces,
+        newStats.totalProduction
+      );
+      
+      setStats(newStats);
+    }
+    
+    setNewData({ 
+      name: '', 
+      value: '', 
+      target: '',
+      energyConsumption: '',
+      targetEnergyConsumption: '',
+      defectivePieces: '',
+      totalProduction: ''
     });
-    setProductionData({
-      ...productionData,
-      [timeframe]: updatedData
-    });
-    setNewData({ name: '', value: '', target: '' });
     setShowDataForm(false);
+  };
+
+  const resetForm = () => {
+    setNewData({ 
+      name: '', 
+      value: '', 
+      target: '',
+      energyConsumption: '',
+      targetEnergyConsumption: '',
+      defectivePieces: '',
+      totalProduction: ''
+    });
+  };
+
+  const handleDataTypeChange = (type: 'production' | 'energy' | 'failures') => {
+    setDataType(type);
+    
+    if (type === 'failures') {
+      // Auto-fill total production with current production data sum
+      const currentTotalProduction = productionData[timeframe].reduce((sum, item) => sum + item.value, 0);
+      setNewData({ 
+        name: '', 
+        value: '', 
+        target: '',
+        energyConsumption: '',
+        targetEnergyConsumption: '',
+        defectivePieces: '',
+        totalProduction: currentTotalProduction.toString()
+      });
+    } else {
+      resetForm();
+    }
   };
 
   return (
@@ -224,81 +327,212 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-3">
             <Factory className="h-8 w-8 text-orange-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Production Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard de Produção</h1>
           </div>
-          <div className="flex space-x-4">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">
+              Bem-vindo, <span className="font-medium">{user?.name}</span>
+            </span>
+            {isAdmin() && (
+              <Link
+                to="/users"
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                <Users className="h-5 w-5" />
+                <span>Gerenciar Usuários</span>
+              </Link>
+            )}
             <button
-              onClick={() => setShowDataForm(!showDataForm)}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              onClick={logout}
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
             >
-              <Database className="h-5 w-5" />
-              <span>Add Data</span>
+              <LogOut className="h-5 w-5" />
+              <span>Sair</span>
             </button>
-            <button
-              onClick={generateRandomData}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
-              <RefreshCcw className="h-5 w-5" />
-              <span>Generate Random Data</span>
-            </button>
-            <PDFDownloadLink
-              document={<ProductionReport data={productionData[timeframe]} inventoryData={inventoryData} stats={stats} />}
-              fileName={`production-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`}
-              className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
-            >
-              <FileText className="h-5 w-5" />
-              <span>Generate Report</span>
-            </PDFDownloadLink>
           </div>
+        </div>
+
+        <div className="flex space-x-4 mb-8">
+          <button
+            onClick={() => setShowDataForm(!showDataForm)}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            <Database className="h-5 w-5" />
+            <span>Adicionar Dados</span>
+          </button>
+          <button
+            onClick={generateRandomData}
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            <RefreshCcw className="h-5 w-5" />
+            <span>Gerar Dados Aleatórios</span>
+          </button>
+          <PDFDownloadLink
+            document={<ProductionReport data={productionData[timeframe]} inventoryData={inventoryData} stats={stats} />}
+            fileName={`production-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`}
+            className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+          >
+            <FileText className="h-5 w-5" />
+            <span>Gerar Relatório</span>
+          </PDFDownloadLink>
         </div>
 
         {showDataForm && (
           <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Add New Data Point</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Adicionar Novos Dados</h2>
+            
+            {/* Data Type Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Dados</label>
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={() => handleDataTypeChange('production')}
+                  className={`px-4 py-2 rounded-md ${
+                    dataType === 'production'
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Dados de Produção
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDataTypeChange('energy')}
+                  className={`px-4 py-2 rounded-md ${
+                    dataType === 'energy'
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Consumo Energético
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDataTypeChange('failures')}
+                  className={`px-4 py-2 rounded-md ${
+                    dataType === 'failures'
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Dados de Falhas
+                </button>
+              </div>
+            </div>
+
             <form onSubmit={handleDataSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name/Period</label>
-                <input
-                  type="text"
-                  value={newData.name}
-                  onChange={(e) => setNewData({ ...newData, name: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                  required
-                />
+              {dataType === 'production' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Nome/Período</label>
+                    <input
+                      type="text"
+                      value={newData.name}
+                      onChange={(e) => setNewData({ ...newData, name: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Produção Real</label>
+                    <input
+                      type="number"
+                      value={newData.value}
+                      onChange={(e) => setNewData({ ...newData, value: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Meta de Produção</label>
+                    <input
+                      type="number"
+                      value={newData.target}
+                      onChange={(e) => setNewData({ ...newData, target: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              {dataType === 'energy' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Consumo Energético Real (MWh)</label>
+                    <input
+                      type="number"
+                      value={newData.energyConsumption}
+                      onChange={(e) => setNewData({ ...newData, energyConsumption: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Meta de Consumo Energético (MWh)</label>
+                    <input
+                      type="number"
+                      value={newData.targetEnergyConsumption}
+                      onChange={(e) => setNewData({ ...newData, targetEnergyConsumption: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              {dataType === 'failures' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Peças Defeituosas</label>
+                    <input
+                      type="number"
+                      value={newData.defectivePieces}
+                      onChange={(e) => setNewData({ ...newData, defectivePieces: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Produção Total 
+                      <span className="text-sm text-gray-500 ml-2">(Preenchido automaticamente com dados atuais de produção)</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={newData.totalProduction}
+                      onChange={(e) => setNewData({ ...newData, totalProduction: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50"
+                      required
+                      readOnly
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="flex space-x-4">
+                <button
+                  type="submit"
+                  className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700"
+                >
+                  Adicionar Dados
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDataForm(false)}
+                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+                >
+                  Cancelar
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Actual Value</label>
-                <input
-                  type="number"
-                  value={newData.value}
-                  onChange={(e) => setNewData({ ...newData, value: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Target Value</label>
-                <input
-                  type="number"
-                  value={newData.target}
-                  onChange={(e) => setNewData({ ...newData, target: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700"
-              >
-                Add Data
-              </button>
             </form>
           </div>
         )}
 
         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-800">Production Overview</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Visão Geral da Produção</h2>
             <div className="flex space-x-2">
               {(['daily', 'monthly', 'annual'] as const).map((t) => (
                 <button
@@ -310,7 +544,7 @@ export default function Dashboard() {
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                  {t === 'daily' ? 'Diário' : t === 'monthly' ? 'Mensal' : 'Anual'}
                 </button>
               ))}
             </div>
@@ -323,8 +557,8 @@ export default function Dashboard() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="value" name="Actual Production" stroke="#ea580c" strokeWidth={2} />
-                <Line type="monotone" dataKey="target" name="Target Production" stroke="#4ade80" strokeWidth={2} strokeDasharray="5 5" />
+                <Line type="monotone" dataKey="value" name="Produção Real" stroke="#ea580c" strokeWidth={2} />
+                <Line type="monotone" dataKey="target" name="Meta de Produção" stroke="#4ade80" strokeWidth={2} strokeDasharray="5 5" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -334,41 +568,41 @@ export default function Dashboard() {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex items-center space-x-3 mb-4">
               <Power className="h-6 w-6 text-blue-500" />
-              <h3 className="text-lg font-semibold text-gray-800">Energy Consumption</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Consumo Energético</h3>
             </div>
             <p className="text-3xl font-bold text-blue-500">{stats.energyConsumption} MWh</p>
             <p className="text-sm text-gray-500 mt-2">
-              Target: {stats.targetEnergyConsumption} MWh
+              Meta: {stats.targetEnergyConsumption} MWh
               <br />
-              Difference: {(stats.energyConsumption - stats.targetEnergyConsumption).toLocaleString()} MWh
+              Diferença: {(stats.energyConsumption - stats.targetEnergyConsumption).toLocaleString()} MWh
             </p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex items-center space-x-3 mb-4">
               <AlertTriangle className="h-6 w-6 text-red-500" />
-              <h3 className="text-lg font-semibold text-gray-800">Rework Rate</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Taxa de Retrabalho</h3>
             </div>
             <p className="text-3xl font-bold text-red-500">{stats.reworkRate}%</p>
             <p className="text-sm text-gray-500 mt-2">
-              {stats.defectivePieces} defective pieces out of {stats.totalProduction} total
+              {stats.defectivePieces} peças defeituosas de {stats.totalProduction} total
             </p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex items-center space-x-3 mb-4">
               <Gauge className="h-6 w-6 text-green-500" />
-              <h3 className="text-lg font-semibold text-gray-800">Operational Efficiency</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Eficiência Operacional</h3>
             </div>
             <p className="text-3xl font-bold text-green-500">{stats.operationalEfficiency}%</p>
-            <p className="text-sm text-gray-500 mt-2">Overall equipment effectiveness</p>
+            <p className="text-sm text-gray-500 mt-2">Efetividade geral dos equipamentos</p>
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex items-center space-x-3 mb-6">
             <Package className="h-6 w-6 text-orange-600" />
-            <h2 className="text-xl font-semibold text-gray-800">Inventory Levels</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Níveis de Estoque</h2>
           </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -378,8 +612,8 @@ export default function Dashboard() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="stock" fill="#ea580c" name="Current Stock" />
-                <Bar dataKey="capacity" fill="#d1d5db" name="Total Capacity" />
+                <Bar dataKey="stock" fill="#ea580c" name="Estoque Atual" />
+                <Bar dataKey="capacity" fill="#d1d5db" name="Capacidade Total" />
               </BarChart>
             </ResponsiveContainer>
           </div>

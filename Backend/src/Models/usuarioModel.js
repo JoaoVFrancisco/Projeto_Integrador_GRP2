@@ -1,20 +1,24 @@
 import db from '../db.js';
 import mysql from 'mysql2/promise';
+import bcrypt from 'bcrypt';
 
 const conexao = mysql.createPool(db);
 
+// Modifique a função criandoUsuario:
 export const criandoUsuario = async (nome, login, senha) => {
-    console.log("UsuarioModel :: criandoUsuario");
-    const sql = `INSERT INTO usuario (nome, login, senha) VALUES (?,?,?)`;
-    const params = [nome, login, senha];
+  console.log("UsuarioModel :: criandoUsuario");
+  
+  const senhaHash = await bcrypt.hash(senha, parseInt(process.env.BCRYPT_SALT_ROUNDS));
+  const sql = `INSERT INTO usuario (nome, login, senha) VALUES (?,?,?)`;
+  const params = [nome, login, senhaHash]; // Agora usa o hash!
 
-    try {
-        const [resposta] = await conexao.query(sql, params);
-        return [201, {mensagem: 'Usuario cadastrado com sucesso!!'}];
-    } catch (error) {
-        console.error({mensagem: "Erro ao cadastrar usuario", code:error.code, sql:error.sqlMessage});
-        return [500, {mensagem: "Erro ao cadastrar usuario", code:error.code, sql:error.sqlMessage}];
-    }
+  try {
+    const [resposta] = await conexao.query(sql, params);
+    return [201, { mensagem: 'Usuário cadastrado com sucesso!' }];
+  } catch (error) {
+    console.error("Erro ao cadastrar usuário:", error);
+    return [500, { mensagem: "Erro ao cadastrar usuário" }];
+  }
 };
 
 

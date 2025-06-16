@@ -2,6 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import usuarioRouter from './Routers/usuarioRouter.js'
 import produtoRouter from './Routers/produtoRouter.js'
+import estoqueRouter from './Routers/estoqueRouter.js'
+import armazemRouter from './Routers/armazemRouter.js'
+import producaoRouter from './Routers/producaoRouter.js'
+import envioRouter from './Routers/envioRouter.js'
 
 
 const PORT = 3000;
@@ -13,6 +17,10 @@ app.use(express.json());
 
 app.use('/usuarios', usuarioRouter)
 app.use('/produtos', produtoRouter)
+app.use('/estoque', estoqueRouter)
+app.use('/armazem', armazemRouter)
+app.use('/producao', producaoRouter)
+app.use('/envio', envioRouter)
 
 
 

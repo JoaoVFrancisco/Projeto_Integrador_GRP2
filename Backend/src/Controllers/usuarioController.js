@@ -1,4 +1,4 @@
-import { apagarUsuario, atualizarUsuario, criandoUsuario, visualizarUsuario } from "../Models/usuarioModel.js";
+import { apagarUsuario,  criandoUsuario, visualizarUsuario } from "../Models/usuarioModel.js";
 
 export const createUser = async (req, res) => {
     console.log("UsuarioController :: createUser");

@@ -35,24 +35,14 @@ export const visualizarUsuario = async () => {
     }
 };
 
-export const atualizarUsuario = async (nome, login, senha, id_usuario) => {
-    console.log("UsuarioModel :: atualizarUsuario");
-
-    const sql = `UPDATE usuario SET nome=?, login=?, senha=? WHERE id_usuario=?`;
-
-    const params = [nome, login, senha, id_usuario]
-    
+export const atualizarSenha = async (id_usuario, novaSenhaHash) => {
+    const sql = `UPDATE usuario SET senha = ? WHERE id_usuario = ?`;
     try {
-        const [resposta] = await conexao.query(sql, params);
-
-        if(resposta.affectedRows<1){
-            return [404, {mensagem:"Usuario não encontrado!!"}]
-        }
-
-        return [201, {mensagem:"Usuario atualizado com sucesso!!"}];
+        const [result] = await conexao.query(sql, [novaSenhaHash, id_usuario]);
+        return result.affectedRows > 0;
     } catch (error) {
-        console.error({mensagem:"erro ao atualizar Usuario", code:error.code, sql:error.sqlMessage});
-        return [500, {mensagem: "erro ao atualizar Usuario", code:error.code, sql:error.sqlMessage}];
+        console.error("Erro ao atualizar senha:", error);
+        throw error;
     }
 };
 
@@ -74,3 +64,14 @@ export const apagarUsuario = async (id_usuario) => {
         return [500, {mensagem:  "Usuario não encontrado", code:error.code, sql:error.sqlMessage}]
     }
 }
+
+export const buscarUsuarioPorLogin = async (login) => {
+    const sql = `SELECT * FROM usuario WHERE login = ?`;
+    try {
+        const [rows] = await conexao.query(sql, [login]);
+        return rows[0] || null; // Retorna o usuário ou null
+    } catch (error) {
+        throw error;
+    }
+};
+

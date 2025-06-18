@@ -4,12 +4,16 @@ import { User, CreateUserData, UpdateUserData, Permission } from '../types/User'
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 
+// ============================================================================
+// MOCK DATA - Dados simulados para desenvolvimento
+// ============================================================================
+
 // Mock data - in production this would come from your backend
 const mockUsers: User[] = [
   {
     id: '1',
     name: 'Admin User',
-    email: 'admin@arcelormittal.com',
+    email: 'admin@lopessolutions.com',
     role: 'admin',
     status: 'active',
     createdAt: '2024-01-01',
@@ -28,7 +32,7 @@ const mockUsers: User[] = [
   {
     id: '2',
     name: 'João Silva',
-    email: 'joao.silva@arcelormittal.com',
+    email: 'joao.silva@lopessolutions.com',
     role: 'manager',
     status: 'active',
     createdAt: '2024-01-02',
@@ -44,7 +48,7 @@ const mockUsers: User[] = [
   {
     id: '3',
     name: 'Maria Santos',
-    email: 'maria.santos@arcelormittal.com',
+    email: 'maria.santos@lopessolutions.com',
     role: 'operator',
     status: 'active',
     createdAt: '2024-01-03',
@@ -58,7 +62,7 @@ const mockUsers: User[] = [
   {
     id: '4',
     name: 'Carlos Oliveira',
-    email: 'carlos.oliveira@arcelormittal.com',
+    email: 'carlos.oliveira@lopessolutions.com',
     role: 'operator',
     status: 'inactive',
     createdAt: '2024-01-04',
@@ -70,6 +74,7 @@ const mockUsers: User[] = [
   }
 ];
 
+// Permissões disponíveis no sistema
 const availablePermissions: Permission[] = [
   { id: '1', name: 'manage_users', description: 'Gerenciar usuários e permissões', module: 'users' },
   { id: '2', name: 'view_production', description: 'Visualizar dados de produção', module: 'production' },
@@ -81,7 +86,15 @@ const availablePermissions: Permission[] = [
   { id: '8', name: 'generate_reports', description: 'Gerar relatórios', module: 'reports' }
 ];
 
+// ============================================================================
+// COMPONENTE PRINCIPAL - UserManagement
+// ============================================================================
+
 export default function UserManagement() {
+  // ========================================================================
+  // HOOKS E ESTADO - Gerenciamento de estado do componente
+  // ========================================================================
+  
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [filteredUsers, setFilteredUsers] = useState<User[]>(mockUsers);
@@ -100,9 +113,14 @@ export default function UserManagement() {
     permissions: []
   });
 
+  // ========================================================================
+  // EFEITOS - Filtros e atualizações automáticas
+  // ========================================================================
+  
   useEffect(() => {
     let filtered = users;
 
+    // Filtro por termo de busca
     if (searchTerm) {
       filtered = filtered.filter(user =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -110,10 +128,12 @@ export default function UserManagement() {
       );
     }
 
+    // Filtro por função/role
     if (roleFilter !== 'all') {
       filtered = filtered.filter(user => user.role === roleFilter);
     }
 
+    // Filtro por status
     if (statusFilter !== 'all') {
       filtered = filtered.filter(user => user.status === statusFilter);
     }
@@ -121,6 +141,11 @@ export default function UserManagement() {
     setFilteredUsers(filtered);
   }, [users, searchTerm, roleFilter, statusFilter]);
 
+  // ========================================================================
+  // HANDLERS - Funções de manipulação de eventos
+  // ========================================================================
+  
+  // Handler para criar novo usuário
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     const newUser: User = {
@@ -138,6 +163,7 @@ export default function UserManagement() {
     setShowCreateModal(false);
   };
 
+  // Handler para deletar usuário
   const handleDeleteUser = (userId: string) => {
     if (userId === currentUser?.id) {
       alert('Você não pode deletar sua própria conta!');
@@ -149,6 +175,7 @@ export default function UserManagement() {
     }
   };
 
+  // Handler para alternar status do usuário (ativo/inativo)
   const handleToggleStatus = (userId: string) => {
     if (userId === currentUser?.id) {
       alert('Você não pode alterar o status da sua própria conta!');
@@ -162,6 +189,7 @@ export default function UserManagement() {
     ));
   };
 
+  // Handler para atualizar permissões do usuário
   const handleUpdatePermissions = (userId: string, newPermissions: string[]) => {
     setUsers(users.map(user =>
       user.id === userId
@@ -172,22 +200,36 @@ export default function UserManagement() {
     setSelectedUser(null);
   };
 
+  // ========================================================================
+  // FUNÇÕES UTILITÁRIAS - Helpers para formatação e estilo
+  // ========================================================================
+  
+  // Função para definir cor da badge de função
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800';
-      case 'manager': return 'bg-blue-100 text-blue-800';
-      case 'operator': return 'bg-green-100 text-green-800';
+      case 'manager': return 'bg-green-100 text-green-800';
+      case 'operator': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
+  // Função para definir cor da badge de status
   const getStatusColor = (status: string) => {
     return status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
 
+  // ========================================================================
+  // RENDERIZAÇÃO - Interface do usuário
+  // ========================================================================
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* ================================================================ */}
+        {/* HEADER - Cabeçalho da página com título e botão de ação */}
+        {/* ================================================================ */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <Link
@@ -198,22 +240,25 @@ export default function UserManagement() {
               <span>Voltar ao Dashboard</span>
             </Link>
             <div className="flex items-center space-x-3">
-              <Users className="h-8 w-8 text-orange-600" />
+              <Users className="h-8 w-8 text-green-600" />
               <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Usuários</h1>
             </div>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
           >
             <Plus className="h-5 w-5" />
             <span>Novo Usuário</span>
           </button>
         </div>
 
-        {/* Filters */}
+        {/* ================================================================ */}
+        {/* FILTROS - Seção de busca e filtros */}
+        {/* ================================================================ */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Campo de busca */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
@@ -221,28 +266,34 @@ export default function UserManagement() {
                 placeholder="Buscar usuários..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
               />
             </div>
+            
+            {/* Filtro por função */}
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+              className="rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             >
               <option value="all">Todas as Funções</option>
               <option value="admin">Administrador</option>
               <option value="manager">Gerente</option>
               <option value="operator">Operador</option>
             </select>
+            
+            {/* Filtro por status */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+              className="rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             >
               <option value="all">Todos os Status</option>
               <option value="active">Ativo</option>
               <option value="inactive">Inativo</option>
             </select>
+            
+            {/* Contador de resultados */}
             <div className="flex items-center text-sm text-gray-600">
               <Filter className="h-4 w-4 mr-2" />
               {filteredUsers.length} usuário(s) encontrado(s)
@@ -250,10 +301,13 @@ export default function UserManagement() {
           </div>
         </div>
 
-        {/* Users Table */}
+        {/* ================================================================ */}
+        {/* TABELA DE USUÁRIOS - Lista principal de usuários */}
+        {/* ================================================================ */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
+              {/* Cabeçalho da tabela */}
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -276,43 +330,59 @@ export default function UserManagement() {
                   </th>
                 </tr>
               </thead>
+              
+              {/* Corpo da tabela */}
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
+                    {/* Coluna: Informações do usuário */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">{user.name}</div>
                         <div className="text-sm text-gray-500">{user.email}</div>
                       </div>
                     </td>
+                    
+                    {/* Coluna: Função/Role */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}>
                         {user.role === 'admin' ? 'Administrador' : 
                          user.role === 'manager' ? 'Gerente' : 'Operador'}
                       </span>
                     </td>
+                    
+                    {/* Coluna: Status */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.status)}`}>
                         {user.status === 'active' ? 'Ativo' : 'Inativo'}
                       </span>
                     </td>
+                    
+                    {/* Coluna: Último login */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('pt-BR') : 'Nunca'}
                     </td>
+                    
+                    {/* Coluna: Número de permissões */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {user.permissions.length} permissão(ões)
                     </td>
+                    
+                    {/* Coluna: Botões de ação */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      {/* Botão: Gerenciar permissões */}
                       <button
                         onClick={() => {
                           setSelectedUser(user);
                           setShowPermissionsModal(true);
                         }}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-green-600 hover:text-green-900"
                         title="Gerenciar Permissões"
                       >
                         <Shield className="h-4 w-4" />
                       </button>
+                      
+                      {/* Botão: Alternar status */}
                       <button
                         onClick={() => handleToggleStatus(user.id)}
                         className={`${user.status === 'active' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
@@ -321,6 +391,8 @@ export default function UserManagement() {
                       >
                         {user.status === 'active' ? <ShieldOff className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                       </button>
+                      
+                      {/* Botão: Deletar usuário */}
                       <button
                         onClick={() => handleDeleteUser(user.id)}
                         className="text-red-600 hover:text-red-900"
@@ -337,58 +409,69 @@ export default function UserManagement() {
           </div>
         </div>
 
-        {/* Create User Modal */}
+        {/* ================================================================ */}
+        {/* MODAL: CRIAR USUÁRIO - Formulário para criação de novo usuário */}
+        {/* ================================================================ */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Criar Novo Usuário</h2>
               <form onSubmit={handleCreateUser} className="space-y-4">
+                {/* Campo: Nome */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Nome</label>
                   <input
                     type="text"
                     value={createUserData.name}
                     onChange={(e) => setCreateUserData({ ...createUserData, name: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                     required
                   />
                 </div>
+                
+                {/* Campo: Email */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Email</label>
                   <input
                     type="email"
                     value={createUserData.email}
                     onChange={(e) => setCreateUserData({ ...createUserData, email: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                     required
                   />
                 </div>
+                
+                {/* Campo: Senha */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Senha</label>
                   <input
                     type="password"
                     value={createUserData.password}
                     onChange={(e) => setCreateUserData({ ...createUserData, password: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                     required
                   />
                 </div>
+                
+                {/* Campo: Função */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Função</label>
                   <select
                     value={createUserData.role}
                     onChange={(e) => setCreateUserData({ ...createUserData, role: e.target.value as any })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                   >
                     <option value="operator">Operador</option>
                     <option value="manager">Gerente</option>
                     <option value="admin">Administrador</option>
                   </select>
                 </div>
+                
+                {/* Botões de ação do modal */}
                 <div className="flex space-x-4">
                   <button
                     type="submit"
-                    className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700"
+                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
                   >
                     Criar Usuário
                   </button>
@@ -405,13 +488,17 @@ export default function UserManagement() {
           </div>
         )}
 
-        {/* Permissions Modal */}
+        {/* ================================================================ */}
+        {/* MODAL: GERENCIAR PERMISSÕES - Interface para editar permissões */}
+        {/* ================================================================ */}
         {showPermissionsModal && selectedUser && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-96 overflow-y-auto">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
                 Gerenciar Permissões - {selectedUser.name}
               </h2>
+              
+              {/* Lista de permissões agrupadas por módulo */}
               <div className="space-y-4">
                 {Object.entries(
                   availablePermissions.reduce((acc, permission) => {
@@ -421,6 +508,7 @@ export default function UserManagement() {
                   }, {} as Record<string, Permission[]>)
                 ).map(([module, permissions]) => (
                   <div key={module} className="border rounded-lg p-4">
+                    {/* Título do módulo */}
                     <h3 className="font-semibold text-gray-800 mb-2 capitalize">
                       {module === 'users' ? 'Usuários' :
                        module === 'production' ? 'Produção' :
@@ -428,6 +516,8 @@ export default function UserManagement() {
                        module === 'inventory' ? 'Estoque' :
                        module === 'reports' ? 'Relatórios' : module}
                     </h3>
+                    
+                    {/* Lista de permissões do módulo */}
                     <div className="space-y-2">
                       {permissions.map((permission) => (
                         <label key={permission.id} className="flex items-center space-x-2">
@@ -445,7 +535,7 @@ export default function UserManagement() {
                                 permissions: availablePermissions.filter(p => newPermissions.includes(p.id))
                               });
                             }}
-                            className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                            className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                           />
                           <div>
                             <div className="text-sm font-medium text-gray-900">{permission.name}</div>
@@ -457,10 +547,12 @@ export default function UserManagement() {
                   </div>
                 ))}
               </div>
+              
+              {/* Botões de ação do modal */}
               <div className="flex space-x-4 mt-6">
                 <button
                   onClick={() => handleUpdatePermissions(selectedUser.id, selectedUser.permissions.map(p => p.id))}
-                  className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700"
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
                 >
                   Salvar Permissões
                 </button>

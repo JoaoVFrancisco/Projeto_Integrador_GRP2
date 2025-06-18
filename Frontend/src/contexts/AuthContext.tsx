@@ -16,7 +16,7 @@ const mockUsers: User[] = [
   {
     id: '1',
     name: 'Admin User',
-    email: 'admin@arcelormittal.com',
+    email: 'admin@lopessolutions.com',
     role: 'admin',
     status: 'active',
     createdAt: '2024-01-01',
@@ -35,7 +35,7 @@ const mockUsers: User[] = [
   {
     id: '2',
     name: 'Manager User',
-    email: 'manager@arcelormittal.com',
+    email: 'manager@lopessolutions.com',
     role: 'manager',
     status: 'active',
     createdAt: '2024-01-02',
@@ -51,7 +51,7 @@ const mockUsers: User[] = [
   {
     id: '3',
     name: 'Operator User',
-    email: 'operator@arcelormittal.com',
+    email: 'operator@lopessolutions.com',
     role: 'operator',
     status: 'active',
     createdAt: '2024-01-03',

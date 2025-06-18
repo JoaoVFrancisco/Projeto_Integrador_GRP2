@@ -24,10 +24,13 @@ export default function Login() {
   // ========================================================================
   
   // Handler para submissão do formulário de login
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+
+  // Login.tsx
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  const success = await login(email, password);
+  if (success) navigate('/dashboard');
+
 
     try {
       const success = await login(email, password);
@@ -42,6 +45,8 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  
 
   // ========================================================================
   // RENDERIZAÇÃO - Interface do usuário
